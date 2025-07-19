@@ -1,0 +1,105 @@
+#errorMessage {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	font:bold 26px Arial, Helvetica, sans-serif;
+	line-height: 50px;
+	text-align: center;
+	color: #FFFFCC;
+	 
+	background: none repeat scroll 0 0 rgba(11,0,23, 0.5);
+	border-bottom: 1px solid #ddd;
+	filter: alpha(opacity=8);
+	 z-index:2000;
+	display: none; /* LEAVE THIS IN*/
+}
+.no-print{ display:none !important}
+.Ftext { width:100% !important;}
+.stext { width:100px !important;}
+ 
+<!--################### TABLE ##############################-->
+ 
+.list {
+	border-collapse: collapse;
+	width: 100%;
+	border-top: 1px solid #DDDDDD !important;
+	border-left: 1px solid #DDDDDD !important;
+	margin-bottom: 20px;
+}
+
+.list td {
+	border-right: 1px solid #DDDDDD;
+	border-bottom: 1px solid #DDDDDD;
+}
+.list thead td {
+	background-color: #EFEFEF;
+	padding: 0px 5px;
+}
+.list thead td a, .list thead td {
+	text-decoration: none;
+	color: #990000;
+	font-weight: 500;
+}
+.list tbody td a {
+	text-decoration: underline;
+}
+.list tbody td {
+	vertical-align: middle;
+	padding: 0px 5px;
+	background: #FFFFFF;
+}
+.list tbody tr:hover td {
+	background-color: #FFFFCB;
+}
+.list .left {
+	text-align: left;
+	padding: 7px;
+}
+.list .right {
+	text-align: right;
+	padding: 7px;
+}
+.list .center {
+	text-align: center;
+	padding: 7px;
+}
+.list .asc {
+	padding-right: 15px;
+	background: url('../image/asc.png') right center no-repeat;
+}
+.list .desc {
+	padding-right: 15px;
+	background: url('../image/desc.png') right center no-repeat;
+}
+.list tr.filter td, .list tr:hover.filter td {
+	padding: 5px;
+	background: #E7EFEF;
+}
+.pagination {
+	border-top: 1px solid #DDDDDD;
+	display: inline-block;
+	width: 100%;
+	padding-top: 6px;
+}
+.pagination .links {
+	float: left;
+	padding-top: 6px;
+}
+
+.ui-dialog-titlebar-close{ display:none;}
+.content-header h1
+{
+	font-size:13px !important;
+	font-weight:800 !important;
+}
+.Lodings{ font-size:36px !important; }
+img { cursor:pointer !important;}
+
+table#grid {border-collapse:collapse; width:100%; } table#grid thead th {background-color:#BCBCBC; padding: 2px;  border: solid #999 1px;}  table#grid td {  padding: 2px;  border: solid #999 1px; }
+
+ [val="1"] {
+border-right:1px solid #FE3040 !important;
+ 
+}

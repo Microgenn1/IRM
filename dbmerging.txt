@@ -1,0 +1,987 @@
+create PROCEDURE [dbo].[Login1] @Email VARCHAR(200),@Pass VARCHAR(20) AS
+
+SELECT u.User_id,u.EmailId,u.Password,u.UserType,u.HotelId,h.Company as HotelName FROM UserTable u
+INNER JOIN Mas_Hotel h ON h.Hotel_Id=u.HotelId WHERE EmailId=@Email AND Password=@Pass
+
+
+
+alter table usertable 
+add UserType bigint
+
+
+
+insert into UserTable(EmailId,Password,UserType,HotelId)values('admin', 'admin',1,1)
+
+
+
+alter table mas_color 
+add Hotel_Id bigint
+
+alter table mas_color 
+add STOREID bigint
+
+update mas_color set hotel_id=1, storeid=1
+
+ insert into menu (menu,act,ord,isirm)values('Master', 1,1,1),('Process', 1,2,1),('Setting', 0,3,1),('Upload', 1,4,1),('Reviews', 0,3,1),
+('Template', 0,6,1),('Social', 0,2,1),('Settings',1,6,1),('Network',0,10,1),('Home',1,1,1),('Report',1,11,1)
+
+
+
+update menu set ord=2 where menu_id=12
+
+
+
+create PROCEDURE [dbo].[Das_Order] @Hotel_Id BIGINT AS 
+SELECT TOP 10 r.Ord_Id,r.Night,r.NoofRoom,r.StatusID,l.FirstName,OrdNo,
+convert(VARCHAR,r.OrderDate,106)Odate,convert(VARCHAR,r.ChkIn,106)ChkIn,convert(VARCHAR,r.ChkOut,106)ChkOut,sum(r.Amount) Amount FROM Trans_Order_Mas r
+INNER JOIN mas_ledger l ON l.Ledger_ID=r.Ledger_Id
+WHERE r.Hotel_Id=@Hotel_Id
+GROUP BY r.Ord_Id,r.Night,r.NoofRoom,r.StatusID,l.FirstName,OrdNo,ChkIn,ChkOut,r.OrderDate
+Order BY r.Ord_Id desc
+
+
+
+alter table mas_hotel add AreaCode varchar(20)
+
+
+alter table mas_hotel add EDDATE datetime
+
+
+
+create PROCEDURE [dbo].[Pro_Mas_Hotel] @ID BIGINT AS
+
+SELECT m.Hotel_Id,m.Company as HotelName,m.Address,m.City,m.Phone, dbo.Rec_Edit(Hotel_Id,'Hotel_Id')[Action] FROM Mas_Hotel m
+WHERE m.Hotel_Id=@ID
+
+
+
+
+create FUNCTION [dbo].[Rec_Edit] (@IDVAL BIGINT,@FLD VARCHAR(50))
+
+RETURNS varchar(2000) 
+AS  
+BEGIN
+
+DECLARE @STR VARCHAR(5000);
+
+SET @STR='
+!@'+convert(varchar(50),@IDVAL)+',||'+@FLD+'||,||Update||@!
+^^'+convert(varchar(50),@IDVAL)+',||'+@FLD+'||,||Delete||%%
+
+';
+
+
+RETURN @STR
+
+END
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(12,'Tax','Tax',1,3)
+
+
+
+create PROCEDURE [dbo].[Pro_Mas_Tax] AS
+
+SELECT TXID,TAX,FROMAMOUNT,TOAMOUNT,CGST,SGST,dbo.Rec_Edit(TXID,'TXID')[Action]  FROM Mas_Tax
+
+
+
+
+CREATE TABLE [dbo].[Mas_Tax](
+	[TXID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TAX] [varchar](250) NULL,
+	[FROMAMOUNT] [decimal](10, 2) NULL,
+	[TOAMOUNT] [decimal](10, 2) NULL,
+	[CGST] [decimal](10, 2) NULL,
+	[SGST] [decimal](10, 2) NULL,
+	[Hotel_id] [bigint] NULL,
+	[STOREID] [bigint] NULL,
+	[ADDDATE] [datetime] NULL,
+	[EDDATE] [datetime] NULL
+) ON [PRIMARY]
+
+
+
+insert into Mas_RoomType(roomtype,PrintingName,Adults,Amount,Extrabedcount,hotel_id,isirm)values('Double Deluxe', 'Double Deluxe ', 2,'1500.00',1,1,1)
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(12,'RoomType','RoomType',1,6)
+
+
+
+create PROCEDURE [dbo].[Pro_Mas_RoomType] AS
+
+ 
+ SELECT M.RoomType,M.Amount,M.Description,dbo.Rec_Edit(M.RoomType_Id,'RoomType_Id')[Action] 
+FROM dbo.Mas_RoomType M where isnull(isirm,0)<>0
+
+
+
+
+
+alter table mas_roomtype add isirm bigint
+
+
+
+alter table mas_roomtype add Ac bigint
+alter table mas_roomtype add Tax numeric(12,2)
+alter table mas_roomtype add STOREID bigint
+
+alter table mas_roomtype add Maxroom bigint
+alter table mas_roomtype add EDDATE datetime
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord,Icon)values(13,'Room Allocation','RoomAllocation',1,1,'Chart')
+
+
+
+
+create PROCEDURE [dbo].[Calender_Add] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+DECLARE @MAXR BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_RoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+  SET @MAXR=(SELECT Maxroom  FROM Mas_RoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id);
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BOK=(SELECT ISNULL(BOOK,0) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BAL=(@AVB)-(@BOK);
+  SET @MAXR=(SELECT Maxroom  FROM Mas_RoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id)-(@BOK);
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" max='+convert(VARCHAR(10),@MAXR)+' name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   ELSE IF @AVB = 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" max='+convert(VARCHAR(10),@MAXR)+' name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
+
+
+
+
+
+alter table Trans_RecTable
+add MO bigint
+
+alter table Trans_RecTable
+add YE bigint
+
+
+alter table Trans_RecTable
+add DA bigint
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(13,'Room Availability ','roomavailability ',1,1)
+
+
+
+create PROCEDURE [dbo].[Calender] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_RoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  SET @BOK=(SELECT ISNULL(BOOK,0) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  SET @BAL=(@AVB)-(@BOK);
+
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td style="background: green; color: white"><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="border: none; background: transparent" readonly id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=text size=2 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   ELSE
+   BEGIN
+   SET @Html=@Html+'<td style="background: red; color: white"><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="border: none; background: transparent" readonly id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=text size=2 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(13,'Rate Change ','ratechange ',1,3)
+
+create PROCEDURE [dbo].[Calenderprice] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+DECLARE @MAXR BIGINT;
+DECLARE @RENT BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_RoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+  SET @MAXR=(SELECT Maxroom  FROM Mas_RoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id);
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BOK=(SELECT (SELECT dbo.Chk_Avb(convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR),@RoomType_Id)) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @RENT=(SELECT RENT FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BAL=(@AVB)-(@BOK);
+  SET @MAXR=(SELECT Maxroom  FROM Mas_RoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id)-(@BOK);
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=1 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RENT)))+'" onchange="getval(this.value,this.id)"></td>';
+   END;
+
+   ELSE IF @AVB = 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input readonly style="background: #ddd; width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RENT)))+'" onchange="getval(this.value,this.id)"></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
+
+
+
+
+
+create FUNCTION [dbo].[Chk_Avb] (@DAT DATETIME,@IDD BIGINT)
+
+RETURNS BIGINT 
+AS  
+BEGIN
+
+DECLARE @STR BIGINT;
+
+SET  @STR=(select sum(td.NoofRoom) from Trans_Receipt_Det td
+inner join Trans_Receipt_Mas tm on tm.Receiptid = td.Rec_Id 
+WHERE td.RoomType_Id=@IDD and @DAT+1 between tm.ChkIn AND tm.ChkOut)
+
+RETURN isnull(@STR,0)
+
+END
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(15,'Hotel','Hotel ',1,1)
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(19,'Hotel Policy','hotelpolicy ',1,1)
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(19,'Color Settings','Color Settings ',1,2)
+
+
+alter table mas_color add EDDATE datetime 
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(19,'Cancellation policy','Cancellationpolicy ',1,3)
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(19,'SMS Settings','SMS Settings',1,4)
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(19,'Email Settings','Email Settings',1,5)
+
+
+
+alter table smsgateway add Template varchar(2000)
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord,icon)values(22,'Order','Order',1,2,'Order')
+insert into submenu(Menu_Id,Smenu,des,act,ord,Icon)values(22,'Failed Transaction','Failed Transaction',1,3,'Receipt')
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(22,'Payment History','paymenthistory',1,4)
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(22,'Expected Booking','Expected Booking',1,1)
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(22,'Booking Log','Booking Log',1,5)
+
+
+
+ create PROCEDURE [dbo].[PRO_Trans_Order]  AS
+
+SELECT m.NoofRoom,m.Receiptid as  Rec_Id,m.Receiptno as RecNo,l.FirstName,convert(VARCHAR,m.OrderDate,106)Dat ,sum(m.Amount) Amount FROM dbo.Trans_Receipt_Mas m
+INNER JOIN mas_ledger l ON l.Ledger_ID=m.Ledger_Id
+GROUP BY m.Receiptid,m.Receiptno,l.FirstName,m.OrderDate,m.NoofRoom
+ORDER BY m.Receiptid desc
+
+
+
+ create PROCEDURE [dbo].[PRO_Trans_OrdersRef]  AS
+
+SELECT distinct Ord_Id,OrdNo,sum(NoofRoom) as room,sum(Amount) as amt from Trans_Order_Mas where ISNULL(StatusID,0)=0
+group by OrdNo,Ord_Id
+order by Ord_Id desc
+
+
+
+create PROCEDURE [dbo].[PRO_Trans_Receipt]  AS
+
+ 
+ SELECT m.Receiptid as Rec_Id,M.Receiptno as RecNo,l.FirstName,convert(VARCHAR,m.rptdate,106)Dat ,sum(m.Amount) Amount
+FROM dbo.Trans_Receipt_mas M
+ 
+INNER JOIN mas_ledger l ON l.Ledger_ID=m.Ledger_Id
+ 
+GROUP BY m.Receiptid ,M.Receiptno,l.FirstName,m.rptdate 
+ORDER BY M.rptdate
+
+
+create PROCEDURE [dbo].[PRO_Trans_Paymentresponse_Easebuzz]  AS
+
+select Refno,Trans_Id,Amount,Status,Paymentsource,Deduction_Per from Paymentgateway_response 
+group by Refno,Trans_Id,Amount,Status,Paymentsource,Deduction_Per
+
+
+
+
+
+CREATE TABLE [dbo].[Paymentgateway_response](
+	[Respid] [int] IDENTITY(1,1) NOT NULL,
+	[Refno] [varchar](150) NULL,
+	[Trans_Id] [varchar](150) NULL,
+	[Trans_Date] [datetime] NULL,
+	[Ledgerid] [bigint] NULL,
+	[Status] [varchar](35) NULL,
+	[Description] [varchar](150) NULL,
+	[Amount] [decimal](10, 2) NULL,
+	[Deduction_Per] [decimal](10, 2) NULL,
+	[Paymentsource] [varchar](150) NULL,
+	[Message] [varchar](150) NULL,
+	[Name] [varchar](150) NULL,
+	[Email] [varchar](150) NULL,
+	[Mobile] [varchar](150) NULL,
+	[Response] [text] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+
+
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(15,'RoomType','RoomType',1,2)
+insert into submenu(Menu_Id,Smenu,des,act,ord)values(15,'Logo','Logo',1,3)
+
+
+
+
+create TABLE [dbo].[Mas_irmRoomType](
+	[RoomType_Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[RoomType] [varchar](50) NULL,
+	[PrintingName] [varchar](50) NULL,
+	[Adults] [numeric](18, 0) NULL,
+	[Amount] [decimal](18, 2) NULL,
+	[ADDDATE] [datetime] NULL,
+	[Hotel_Id] [bigint] NULL,
+	[ImgPath] [varchar](300) NULL,
+	[Act] [bigint] NULL,
+	[IMGKEY] [varchar](1000) NULL,
+	[InActive] [bigint] NULL,
+	[orderby] [bigint] NULL,
+	[Extrabedcount] [bigint] NULL,
+	[Extrabedamount] [numeric](12, 2) NULL,
+	[conference] [bigint] NULL,
+	[Description] [varchar](1000) NULL,
+	[Ac] [bigint] NULL,
+	[Tax] [numeric](12, 2) NULL,
+	[STOREID] [bigint] NULL,
+	[Maxroom] [bigint] NULL,
+	[EDDATE] [datetime] NULL,
+	[actualroomid] bigint null,
+ CONSTRAINT [PK_Mas_irmRoomType_1] PRIMARY KEY CLUSTERED 
+(
+	[RoomType_Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+
+
+ALTER PROCEDURE [dbo].[Pro_Mas_RoomType] AS
+
+ 
+ SELECT M.RoomType,M.Amount,M.Description,dbo.Rec_Edit(M.RoomType_Id,'RoomType_Id')[Action] 
+FROM dbo.Mas_irmRoomType M 
+
+
+
+
+ALTER PROCEDURE [dbo].[Calender] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_irmRoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  SET @BOK=(SELECT ISNULL(BOOK,0) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  SET @BAL=(@AVB)-(@BOK);
+
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td style="background: green; color: white"><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="border: none; background: transparent" readonly id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=text size=2 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   ELSE
+   BEGIN
+   SET @Html=@Html+'<td style="background: red; color: white"><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="border: none; background: transparent" readonly id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=text size=2 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
+
+
+
+
+ALTER PROCEDURE [dbo].[Calender_Add] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+DECLARE @MAXR BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_irmRoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+  SET @MAXR=(SELECT Maxroom  FROM Mas_irmRoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id);
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BOK=(SELECT ISNULL(BOOK,0) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BAL=(@AVB)-(@BOK);
+  SET @MAXR=(SELECT Maxroom  FROM Mas_irmRoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id)-(@BOK);
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" max='+convert(VARCHAR(10),@MAXR)+' name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   ELSE IF @AVB = 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" max='+convert(VARCHAR(10),@MAXR)+' name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@BAL)))+'" onchange="getval(this.value,this.id)"><p style="font-size: 7.5px">'+convert(VARCHAR(10),@AVB)+'-'+convert(VARCHAR(10),@BOK)+'='+convert(VARCHAR(10),@BAL)+'</p></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
+
+
+
+ALTER PROCEDURE [dbo].[Calenderprice] @Rtype BIGINT,@Fdate DATETIME,@Tdate DATETIME,@COU BIGINT,@HOID BIGINT AS 
+
+DECLARE @Html VARCHAR(8000);
+DECLARE @Html1 VARCHAR(8000);
+DECLARE @Html2 VARCHAR(8000);
+DECLARE @DN VARCHAR(100);
+DECLARE @TOT INT;
+DECLARE @SID INT;
+DECLARE @MO INT;
+DECLARE @YR INT;
+DECLARE @AVB BIGINT;
+DECLARE @BOK BIGINT;
+DECLARE @BAL BIGINT;
+DECLARE @CON BIGINT;
+DECLARE @MAXR BIGINT;
+DECLARE @RENT BIGINT;
+
+SET @TOT =(SELECT day(@Tdate));
+SET @SID=(SELECT day(@Fdate));
+SET @MO=(SELECT month(@Fdate));
+SET @YR=(SELECT year(@Fdate));
+SET @Html2='';SET @Html='';
+SET @Html1=' <table style="width: 100%;"><tr style="background-color:#acccfd;font-weight:bold">';
+ SET @Html1=@Html1+' <td>DAY</td>';
+WHILE @SID <= @TOT
+BEGIN
+   SET @Html1=@Html1+' <td>'+convert(VARCHAR(10),@SID)+'</td>';
+   SET @SID = @SID + 1;
+END;
+SET @Html1=@Html1+'</tr><tr style="background-color:#d8e7fc;font-weight:bold">';
+ SET @Html1=@Html1+' <td>WEEK</td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+   
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+   
+   SET @Html1=@Html1+' <td>'+@DN+'</td>';
+   SET @SID = @SID + 1;
+END;
+
+
+
+
+DECLARE @RoomType_Id BIGINT;
+DECLARE @RoomType VARCHAR(100);
+DECLARE @MyCursor CURSOR
+SET @MyCursor = CURSOR FAST_FORWARD
+FOR
+
+SELECT RoomType_Id,RoomType FROM Mas_irmRoomType WHERE RoomType_Id=@Rtype and Hotel_Id=@HOID
+
+OPEN @MyCursor
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+WHILE @@FETCH_STATUS = 0
+BEGIN
+
+SET @Html=@Html+'</tr><tr>';
+SET @Html=@Html+'<td></td>';
+
+SET @SID=(SELECT day(@Fdate));
+WHILE @SID <= @TOT
+BEGIN
+
+  SET @CON=(SELECT Count(*) as no  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id)
+  IF @CON = 0
+  BEGIN
+
+  SET @AVB=0;
+  SET @BOK=0;
+  SET @BAL=0;
+  SET @MAXR=(SELECT Maxroom  FROM Mas_irmRoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id);
+
+  END;
+
+  ELSE
+  BEGIN
+
+  SET @DN=(SELECT LEFT(DATENAME(dw,''+convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR)),3));
+  SET @AVB=(SELECT AVB  FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BOK=(SELECT (SELECT dbo.Chk_Avb(convert(VARCHAR(10),@MO)+'/'+convert(VARCHAR(10),@SID)+'/'+convert(VARCHAR(10),@YR),@RoomType_Id)) FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @RENT=(SELECT RENT FROM Trans_RecTable WHERE Hotel_Id=@HOID and MO=@MO AND YE=@YR AND DA=@SID AND RoomType_Id=@RoomType_Id);
+  SET @BAL=(@AVB)-(@BOK);
+  SET @MAXR=(SELECT Maxroom  FROM Mas_irmRoomType WHERE Hotel_Id=@HOID AND RoomType_Id=@RoomType_Id)-(@BOK);
+  END;
+   
+   IF @AVB > 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input style="width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=1 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RENT)))+'" onchange="getval(this.value,this.id)"></td>';
+   END;
+
+   ELSE IF @AVB = 0
+   BEGIN
+   SET @Html=@Html+'<td><input value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RoomType_Id)+'K'+convert(VARCHAR(10),@MO)+'K'+convert(VARCHAR(10),@YR)+'K'+convert(VARCHAR(10),@SID)))+'" type="hidden" name="I'+convert(VARCHAR(10),@COU+1)+'"><input readonly style="background: #ddd; width: 60px" id="R'+convert(VARCHAR(10),@COU+1)+'" name="R'+convert(VARCHAR(10),@COU+1)+'" num=1 type=number size=2 min=0 value="'+RTRIM(LTRIM(convert(VARCHAR(10),@RENT)))+'" onchange="getval(this.value,this.id)"></td>';
+   END;
+
+   SET @SID = @SID + 1;
+   SET @COU=@COU+1;
+END;
+
+FETCH NEXT FROM @MyCursor
+INTO @RoomType_Id,@RoomType
+END
+CLOSE @MyCursor
+DEALLOCATE @MyCursor
+
+SET @Html=@Html+'</tr></table>';
+ 
+SELECT  @Html1 AS Ht,@Html AS Html,@Html2 AS Html2,@COU AS Cou,@YR AS Yr;
